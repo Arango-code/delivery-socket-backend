@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/lib/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model categories {
+  name          String       @db.VarChar(20)
+  description   String?      @db.VarChar(255)
+  restaurant_id Int?
+  category_id   Int          @id @default(autoincrement())
+  restaurants   restaurants? @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_category_restaurant")
+  products      products[]
+}
+
+model clients {
+  client_id         Int       @id @default(autoincrement())
+  name              String?   @db.VarChar(50)
+  phone             String?   @db.VarChar(20)
+  session_id        String    @db.VarChar(100)
+  registration_date DateTime? @default(now()) @db.Timestamp(6)
+  orders            orders[]
+}
+
+model usuario {
+  usuario_id     Int       @id @default(autoincrement())
+  username       String    @unique @db.VarChar(50)
+  password       String    @db.VarChar(255)
+  restaurant_id  Int?
+  rol            String?
+  is_active      Boolean   @default(true)
+  is_super_admin Boolean   @default(false)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  updated_at     DateTime? @default(now()) @updatedAt @db.Timestamp(6)
+  restaurants restaurants? @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_restaurant")
+}
+
+model order_items {
+  order_item_id        Int      @id @default(autoincrement())
+  order_id             Int
+  product_id           Int
+  quantity             Int
+  unit_price           Decimal  @db.Decimal(12, 2)
+  subtotal             Decimal? @db.Decimal(12, 2)
+  special_instructions String?
+  orders               orders   @relation(fields: [order_id], references: [order_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_order_item_order")
+  products             products @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_order_item_product")
+}
+
+model orders {
+  order_id             Int           @id @default(autoincrement())
+  external_id          String        @unique @db.VarChar(100)
+  restaurant_id        Int
+  client_id            Int
+  order_number         String?       @db.VarChar
+  order_date           DateTime?     @default(now()) @db.Timestamp(6)
+  delivery_hour        DateTime?     @db.Timestamp(6)
+  total_amount         Decimal?      @db.Decimal(12, 2)
+  subtotal             Decimal?      @db.Decimal(12, 2)
+  delivery_fee         Decimal?      @db.Decimal(12, 2)
+  discount_amount      Decimal?      @db.Decimal(12, 2)
+  delivery_address     String?
+  special_instructions String?
+  is_takeaway          Boolean?      @default(false)
+  is_active            Boolean
+  is_complete          Boolean       @default(false)
+  status               String        @db.VarChar(50)
+  payment_method       String?       @db.VarChar(10)
+  order_items          order_items[]
+  clients              clients       @relation(fields: [client_id], references: [client_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_order_client")
+  restaurants          restaurants   @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_order_restaurant")
+}
+
+model products {
+  product_id       Int           @id @default(autoincrement())
+  restaurant_id    Int
+  category_id      Int
+  name             String        @db.VarChar(100)
+  description      String?
+  price            Decimal?      @db.Decimal(12, 2)
+  is_available     Boolean?      @default(true)
+  preparation_time Int?
+  created_at       DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?     @default(now()) @db.Timestamp(6)
+  order_items      order_items[]
+  categories       categories    @relation(fields: [category_id], references: [category_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_product_categories")
+  restaurants      restaurants   @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_product_restaurant")
+}
+
+model restaurants {
+  restaurant_id        Int          @id(map: "Restaurants_pkey") @default(autoincrement())
+  name                 String       @db.VarChar(100)
+  address              String
+  phone                String?      @db.VarChar(20)
+  email                String?      @db.VarChar(100)
+  opening_time         DateTime?    @db.Time(6)
+  closing_time         DateTime?    @db.Time(6)
+  created_at           DateTime?    @default(now()) @db.Timestamp(6)
+  payment_methods      String?
+  delivery_areas       String?
+  pick_up_location     String?      @db.VarChar(255)
+  return_policy        String?
+  cancellation_policy  String?
+  delivery_rules       String?
+  categories           categories[]
+  orders               orders[]
+  products             products[]
+  usuarios             usuario[]
+}
